@@ -44,6 +44,8 @@ Level 2    | 4        | 4            | [4,16,2,4]   | Double BM3D pass
 Level 3    | 2        | 3            | [4,8,1,4]    | Double BM3D pass
 Level 4    | 1        | 2            | [8,4,1,2]    | Single BM3D pass
 
+Classic Oyster uses 4 NL iters, 5 recalc steps, double BM3D
+
 # FEATURES vs Original Oyster:
 - Uses cuFFT backend for DFTTest2 )
 - Shared DFTTest backend reused across calls (eliminates recreation overhead)

@@ -2,7 +2,7 @@
 
 Modeled after https://github.com/IFeelBloated/Oyster
 
-Using CUDA wherever possible.  Levels 0..5 allows for difference processing speeds (0 the slowest level)
+Using CUDA wherever possible.  Levels 0..5 allows for different processing speeds (0 the slowest level)
 
 #License: 
 LGPL v3.0

@@ -9,8 +9,9 @@ LGPL v3.0
 
 #Usage example:
 
-    level = 2
-    clip_y, chroma = PMOyster.ChromaSave(clip)
+    # clip has to be float 32 
+    level = 2   # set level from 0..5 (0 being the slowest)
+    clip_y, chroma = PMOyster.ChromaSave(clip)   # we do not want to deal with UV stuff Y only!  
     
     # All processing on pure GRAY
     pel = 4
@@ -21,7 +22,7 @@ LGPL v3.0
                                    elast=0.015, lowpass=None, level=level)
     
     # Restore chroma once at the end
-    clip = PMOyster.ChromaRestore(clip_y, chroma)
+    clip = PMOyster.ChromaRestore(clip_y, chroma) # resotre the original UV
 
 
 # Level comparison table

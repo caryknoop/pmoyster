@@ -1,10 +1,12 @@
-Poor Man's Oyster
+# Poor Man's Oyster
 
 Modeled after https://github.com/IFeelBloated/Oyster
+Using CUDA wherever possible.  Levels 0..5 allows for difference processing speeds (0 the slowest level)
 
-License: LGPL v3.0
+#License: 
+LGPL v3.0
 
-Usage example:
+#Usage example:
     level = 2
     clip_y, chroma = PMOyster.ChromaSave(clip)
     
@@ -20,9 +22,9 @@ Usage example:
     clip = PMOyster.ChromaRestore(clip_y, chroma)
 
 
-Info
 
-LEVEL COMPARISON TABLE:
+
+# Level comparison table
 =========================================================================
 PMOyster v2  | NL Iters | Recalc Steps | BM3D Params  | Special Features
 -------------|----------|--------------|--------------|------------------
@@ -33,7 +35,7 @@ Level 3      | 2        | 3            | [4,8,1,4]    | Double BM3D pass
 Level 4      | 1        | 2            | [8,4,1,2]    | Single BM3D pass
 =========================================================================
 
-FEATURES vs Original Oyster:
+# FEATURES vs Original Oyster:
 - Uses cuFFT backend for DFTTest2 (faster than nvrtc/cuda fallback chain)
 - Shared DFTTest backend reused across calls (eliminates recreation overhead)
 - Direct function calls (no class wrapper indirection)
@@ -43,14 +45,14 @@ FEATURES vs Original Oyster:
 - Level 0 uses larger NLMeans windows (64 vs 32) and stronger sigma scaling
 - Content-aware presets with automatic detection based on framerate
 
-PERFORMANCE OPTIMIZATIONS:
+# PERFORMANCE OPTIMIZATIONS:
 - sosize=0 for faster cuFFT operation
 - _ensure_float32() helper reduces redundant conversions
 - Faster Expr with akarin requirement
 - Reduced redundant CopyFrameProps calls
 - Fixed VAggregate syntax (bm3d.VAggregate vs direct call)
 
-PRESET FREQUENCY CUTOFFS:
+# PRESET FREQUENCY CUTOFFS:
 - auto (default): fps > 30 uses "video" preset, fps ≤ 30 uses "film" preset
 - film: 0.65 (Deringing/Destaircase), 0.18 (Deblocking) - preserves film grain
 - balanced: 0.48 (Deringing/Destaircase), 0.12 (Deblocking) - middle ground

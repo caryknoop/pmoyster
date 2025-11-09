@@ -2,7 +2,7 @@
 
 Modeled after https://github.com/IFeelBloated/Oyster
 
-Using CUDA wherever possible.  Levels 0..5 allows for different processing speeds (0 the slowest level)
+Using CUDA wherever possible.  Levels 0..4 allows for different processing speeds (0 the slowest level)
 
 # License
 
@@ -11,7 +11,7 @@ LGPL v3.0
 # Usage example
 
     # clip has to be float 32 
-    level = 2   # set level from 0..5 (0 being the slowest)
+    level = 2   # set level from 0..4 (0 being the slowest)
     clip_y, chroma = PMOyster.ChromaSave(clip)   # we do not want to deal with UV stuff Y only!  
     
     # All processing on pure GRAY

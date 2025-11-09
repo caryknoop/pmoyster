@@ -27,12 +27,12 @@ LGPL v3.0
 
 # Required Plugins
 
-bm3dcuda_rtc - CUDA-accelerated BM3D denoising
-nlm_cuda - CUDA-accelerated Non-Local Means denoising
-dfttest2 (with CUDA support) - Frequency domain filtering using cuFFT backend
-akarin (vs-akarin) - Required for optimized Expr operations
-nnedi3cl - OpenCL-accelerated NNEDI3 interpolation
-mvsf - MVTools Super Fast (motion compensation functions)
+- bm3dcuda_rtc - CUDA-accelerated BM3D denoising
+- nlm_cuda - CUDA-accelerated Non-Local Means denoising
+- dfttest2 (with CUDA support) - Frequency domain filtering using cuFFT backend
+- akarin (vs-akarin) - Required for optimized Expr operations
+- nnedi3cl - OpenCL-accelerated NNEDI3 interpolation
+- mvsf - MVTools Super Fast (motion compensation functions)
 
 # Level comparison table
 

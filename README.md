@@ -4,6 +4,8 @@ Modeled after https://github.com/IFeelBloated/Oyster
 
 Using CUDA wherever possible.  Levels 0..4 allows for different processing speeds (0 the slowest level)
 
+Currrently in development (Alpha)
+
 # License
 
 LGPL v3.0

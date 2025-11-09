@@ -36,7 +36,7 @@ Level 3    | 2        | 3            | [4,8,1,4]    | Double BM3D pass
 Level 4    | 1        | 2            | [8,4,1,2]    | Single BM3D pass
 
 # FEATURES vs Original Oyster:
-- Uses cuFFT backend for DFTTest2 (faster than nvrtc/cuda fallback chain)
+- Uses cuFFT backend for DFTTest2 )
 - Shared DFTTest backend reused across calls (eliminates recreation overhead)
 - Direct function calls (no class wrapper indirection)
 - Optimized bitdepth conversions (only when needed)

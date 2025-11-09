@@ -12,18 +12,18 @@ LGPL v3.0
 
     # clip has to be float 32 
     level = 2   # set level from 0..4 (0 being the slowest)
+
+    # Grey only!
     clip_y, chroma = PMOyster.ChromaSave(clip)   # we do not want to deal with UV stuff Y only!  
     
-    # All processing on pure GRAY
-    pel = 4
-    super = PMOyster.Super(clip_y, pel=pel)
-    ref = PMOyster.Basic(clip_y, super=super, radius=3, sad=1000.0, pel=pel)
+    super = PMOyster.Super(clip_y, pel=4)
+    ref = PMOyster.Basic(clip_y, super=super, radius=3, sad=1000.0, pel=4)
     clip_y = PMOyster.Deringing(clip_y, ref=ref, sigma=10.0, level=level)
     clip_y = PMOyster.Destaircase(clip_y, ref, radius=3, sigma=12.0, thr=0.03,
                                    elast=0.015, lowpass=None, level=level)
     
     # Restore chroma once at the end
-    clip = PMOyster.ChromaRestore(clip_y, chroma) # resotre the original UV
+    clip = PMOyster.ChromaRestore(clip_y, chroma) # restore the original UV
 
 # Required Plugins
 

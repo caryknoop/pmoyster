@@ -24,18 +24,15 @@ LGPL v3.0
     clip = PMOyster.ChromaRestore(clip_y, chroma)
 
 
-
-
 # Level comparison table
-=========================================================================
-PMOyster v2  | NL Iters | Recalc Steps | BM3D Params  | Special Features
--------------|----------|--------------|--------------|------------------
-Level 0      | 8        | 6            | [1,48,6,12]  | Triple BM3D pass
-Level 1      | 6        | 6            | [2,32,4,8]   | Triple BM3D pass
-Level 2      | 4        | 4            | [4,16,2,4]   | Double BM3D pass
-Level 3      | 2        | 3            | [4,8,1,4]    | Double BM3D pass
-Level 4      | 1        | 2            | [8,4,1,2]    | Single BM3D pass
-=========================================================================
+
+PMOyster   | NL Iters | Recalc Steps | BM3D Params  | Special Features
+-----------|----------|--------------|--------------|------------------
+Level 0    | 8        | 6            | [1,48,6,12]  | Triple BM3D pass
+Level 1    | 6        | 6            | [2,32,4,8]   | Triple BM3D pass
+Level 2    | 4        | 4            | [4,16,2,4]   | Double BM3D pass
+Level 3    | 2        | 3            | [4,8,1,4]    | Double BM3D pass
+Level 4    | 1        | 2            | [8,4,1,2]    | Single BM3D pass
 
 # FEATURES vs Original Oyster:
 - Uses cuFFT backend for DFTTest2 (faster than nvrtc/cuda fallback chain)

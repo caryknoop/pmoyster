@@ -38,34 +38,61 @@ LGPL v3.0
 
 # Level comparison table
 
-PMOyster   | NL Iters | Recalc Steps | BM3D Params  | Special Features
------------|----------|--------------|--------------|------------------
-Level 0    | 8        | 6            | [1,48,6,12]  | Triple BM3D pass
-Level 1    | 6        | 6            | [2,32,4,8]   | Triple BM3D pass
-Level 2    | 4        | 4            | [4,16,2,4]   | Double BM3D pass
-Level 3    | 2        | 3            | [4,8,1,4]    | Double BM3D pass
-Level 4    | 1        | 2            | [8,4,1,2]    | Single BM3D pass
+PMOyster v2  | NL Iters | Recalc Steps | BM3D Params  | BM3D Passes (by function)
+-------------|----------|--------------|--------------|-------------------------
+Level 0      | 8        | 6            | [1,48,6,12]  | Deringing: 3 passes
+             |          |              |              | Destaircase: 2 passes
+             |          |              |              | Deblocking: 2 passes
+-------------|----------|--------------|--------------|-------------------------
+Level 1      | 6        | 6            | [2,32,4,8]   | Deringing: 3 passes
+             |          |              |              | Destaircase: 2 passes
+             |          |              |              | Deblocking: 2 passes
+-------------|----------|--------------|--------------|-------------------------
+Level 2      | 4        | 4            | [4,16,2,4]   | Deringing: 2 passes
+             |          |              |              | Destaircase: 2 passes
+             |          |              |              | Deblocking: 2 passes
+-------------|----------|--------------|--------------|-------------------------
+Level 3      | 2        | 3            | [4,8,1,4]    | Deringing: 1 pass
+             |          |              |              | Destaircase: 2 passes
+             |          |              |              | Deblocking: 1 pass
+-------------|----------|--------------|--------------|-------------------------
+Level 4      | 1        | 2            | [8,4,1,2]    | Deringing: 1 pass
+             |          |              |              | Destaircase: 1 pass
+             |          |              |              | Deblocking: 1 pass
 
-Classic Oyster uses 4 NL iters, 5 recalc steps, double BM3D
+# Notes
 
-# FEATURES vs Original Oyster:
-- Uses cuFFT backend for DFTTest2 )
+- NL Iters: Only applies to Deringing function
+- Recalc Steps: Only applies to Basic (motion estimation) function
+- BM3D passes vary by function:
+  * Deringing has 3 NL refinement loops at levels 0-1
+  * Destaircase has 2 BM3D passes at levels 0-2, 1 pass at levels 3-4
+  * Deblocking has 2 passes at levels 0-2, 1 pass at levels 3-4 (NEW: difference-based processing)
+- Level 3+ uses simplified processing with early returns
+
+# FEATURES vs Original Oyster
+
+- Uses cuFFT backend for DFTTest2 (faster than nvrtc/cuda fallback chain)
 - Shared DFTTest backend reused across calls (eliminates recreation overhead)
 - Direct function calls (no class wrapper indirection)
 - Optimized bitdepth conversions (only when needed)
 - Explicit GRAY input/output with ChromaSave/ChromaRestore helpers
 - Level 0-1 include triple BM3D pass for ultimate quality
 - Level 0 uses larger NLMeans windows (64 vs 32) and stronger sigma scaling
+- NEW: Adaptive NLMeans parameters at level 0 (a=6, s=3 vs 8,4) to preserve fine detail
 - Content-aware presets with automatic detection based on framerate
+- NEW: Deblocking uses difference-based processing like original Oyster (better artifact removal)
 
-# PERFORMANCE OPTIMIZATIONS:
+# PERFORMANCE OPTIMIZATIONS
+
 - sosize=0 for faster cuFFT operation
 - _ensure_float32() helper reduces redundant conversions
 - Faster Expr with akarin requirement
 - Reduced redundant CopyFrameProps calls
 - Fixed VAggregate syntax (bm3d.VAggregate vs direct call)
 
-# PRESET FREQUENCY CUTOFFS:
+# PRESET FREQUENCY CUTOFFS
+
 - auto (default): fps > 30 uses "video" preset, fps ≤ 30 uses "film" preset
 - film: 0.65 (Deringing/Destaircase), 0.18 (Deblocking) - preserves film grain
 - balanced: 0.48 (Deringing/Destaircase), 0.12 (Deblocking) - middle ground

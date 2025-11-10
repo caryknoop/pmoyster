@@ -38,27 +38,13 @@ LGPL v3.0
 
 # Level comparison table
 
-PMOyster v2  | NL Iters | Recalc Steps | BM3D Params  | BM3D Passes (by function)
--------------|----------|--------------|--------------|-------------------------
-Level 0      | 8        | 6            | [1,48,6,12]  | Deringing: 3 passes
-             |          |              |              | Destaircase: 2 passes
-             |          |              |              | Deblocking: 2 passes
--------------|----------|--------------|--------------|-------------------------
-Level 1      | 6        | 6            | [2,32,4,8]   | Deringing: 3 passes
-             |          |              |              | Destaircase: 2 passes
-             |          |              |              | Deblocking: 2 passes
--------------|----------|--------------|--------------|-------------------------
-Level 2      | 4        | 4            | [4,16,2,4]   | Deringing: 2 passes
-             |          |              |              | Destaircase: 2 passes
-             |          |              |              | Deblocking: 2 passes
--------------|----------|--------------|--------------|-------------------------
-Level 3      | 2        | 3            | [4,8,1,4]    | Deringing: 1 pass
-             |          |              |              | Destaircase: 2 passes
-             |          |              |              | Deblocking: 1 pass
--------------|----------|--------------|--------------|-------------------------
-Level 4      | 1        | 2            | [8,4,1,2]    | Deringing: 1 pass
-             |          |              |              | Destaircase: 1 pass
-             |          |              |              | Deblocking: 1 pass
+| PMOyster v2 | NL Iters | Recalc Steps | BM3D Params | BM3D Passes (by function) |
+|-------------|----------|--------------|-------------|---------------------------|
+| **Level 0** | 8        | 6            | [1,48,6,12] | Deringing: 3 passes<br>Destaircase: 2 passes<br>Deblocking: 2 passes |
+| **Level 1** | 6        | 6            | [2,32,4,8]  | Deringing: 3 passes<br>Destaircase: 2 passes<br>Deblocking: 2 passes |
+| **Level 2** | 4        | 4            | [4,16,2,4]  | Deringing: 2 passes<br>Destaircase: 2 passes<br>Deblocking: 2 passes |
+| **Level 3** | 2        | 3            | [4,8,1,4]   | Deringing: 1 pass<br>Destaircase: 2 passes<br>Deblocking: 1 pass |
+| **Level 4** | 1        | 2            | [8,4,1,2]   | Deringing: 1 pass<br>Destaircase: 1 pass<br>Deblocking: 1 pass |
 
 # Notes
 

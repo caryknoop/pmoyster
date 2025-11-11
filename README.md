@@ -1,87 +1,163 @@
-# Poor Man's Oyster
+# PMOyster (Poor Man’s Oyster)
 
-Modeled after https://github.com/IFeelBloated/Oyster
+PMOyster is a GPU‑accelerated implementation of the Oyster restoration pipeline for VapourSynth. 
 
-Using CUDA wherever possible.  Levels 0..4 allows for different processing speeds (0 the slowest level)
+Modeled after the original Oyster:
+https://github.com/IFeelBloated/Oyster
 
-Currrently in development (Alpha)
 
-# License
+## Requirements
 
-LGPL v3.0
+| Dependency        | Purpose                                                |
+|------------------|--------------------------------------------------------|
+| `bm3dcuda_rtc`   | CUDA‑accelerated BM3D filtering                        |
+| `nlm_cuda`       | CUDA‑accelerated Non‑Local Means                       |
+| `dfttest2`       | cuFFT‑accelerated frequency‑domain filtering           |
+| `akarin`         | Optimized expression evaluation (required)             |
+| `nnedi3cl`       | High‑quality neural interpolation                      |
+| `mvsf`           | Accelerated motion estimation / compensation (MVTools) |
 
-# Usage example
 
-    # clip has to be float 32 
-    level = 2   # set level from 0..4 (0 being the slowest)
+## Quality Level (`level`) — unchanged
 
-    # Grey only!
-    clip_y, chroma = PMOyster.ChromaSave(clip)   # we do not want to deal with UV stuff Y only!  
-    
-    super = PMOyster.Super(clip_y, pel=4)
-    ref = PMOyster.Basic(clip_y, super=super, radius=3, sad=1000.0, pel=4)
-    clip_y = PMOyster.Deringing(clip_y, ref=ref, sigma=10.0, level=level)
-    clip_y = PMOyster.Destaircase(clip_y, ref, radius=3, sigma=12.0, thr=0.03,
-                                   elast=0.015, lowpass=None, level=level)
-    
-    # Restore chroma once at the end
-    clip = PMOyster.ChromaRestore(clip_y, chroma) # restore the original UV
+| Level | Speed    | Deringing       | Destaircase | Deblocking | Notes                       |
+|------:|----------|-----------------|-------------|------------|-----------------------------|
+| **0** | Slowest  | Strong refine    | 2–3 passes  | 2 passes   | Max quality, slow           |
+| **1** | Slow     | Strong           | 2 passes    | 2 passes   | Stable high quality         |
+| **2** | Medium   | Medium           | 2 passes    | 2 passes   | **Recommended default**     |
+| **3** | Fast     | Light            | 1 pass      | 1 pass     | Good for previewing         |
+| **4** | Fastest  | Minimal          | Minimal     | Minimal    | Fast cleanup / diagnostics  |
 
-# Required Plugins
+`level` controls internal processing complexity and is **independent** of the new input‑adaptation parameters below.
 
-- bm3dcuda_rtc - CUDA-accelerated BM3D denoising
-- nlm_cuda - CUDA-accelerated Non-Local Means denoising
-- dfttest2 (with CUDA support) - Frequency domain filtering using cuFFT backend
-- akarin (vs-akarin) - Required for optimized Expr operations
-- nnedi3cl - OpenCL-accelerated NNEDI3 interpolation
-- mvsf - MVTools Super Fast (motion compensation functions)
 
-# Level comparison table
+## Source‑Dependent Strength Controls (new)
 
-| PMOyster v2 | NL Iters | Recalc Steps | BM3D Params | BM3D Passes (by function) |
-|-------------|----------|--------------|-------------|---------------------------|
-| **Level 0** | 8        | 6            | [1,48,6,12] | Deringing: 3 passes<br>Destaircase: 2 passes<br>Deblocking: 2 passes |
-| **Level 1** | 6        | 6            | [2,32,4,8]  | Deringing: 3 passes<br>Destaircase: 2 passes<br>Deblocking: 2 passes |
-| **Level 2** | 4        | 4            | [4,16,2,4]  | Deringing: 2 passes<br>Destaircase: 2 passes<br>Deblocking: 2 passes |
-| **Level 3** | 2        | 3            | [4,8,1,4]   | Deringing: 1 pass<br>Destaircase: 2 passes<br>Deblocking: 1 pass |
-| **Level 4** | 1        | 2            | [8,4,1,2]   | Deringing: 1 pass<br>Destaircase: 1 pass<br>Deblocking: 1 pass |
+### `source_format`
+Describes the origin of the material:
 
-Level 0 is only suitable on high frequency
-# Notes
+| Value      | Intended Use Case                    | Behavior                     |
+|-----------:|--------------------------------------|------------------------------|
+| `film`     | Film scans, CGI, cinematic masters   | Grain‑preserving             |
+| `video`    | Broadcast / tape / web compression   | Stronger artifact suppression|
+| `balanced` | Neutral default                      | Middle ground                |
+| `auto`     | Auto: `fps > 25 → video`, else film  | Safe for NTSC; PAL is mixed  |
 
-- NL Iters: Only applies to Deringing function
-- Recalc Steps: Only applies to Basic (motion estimation) function
-- BM3D passes vary by function:
-  * Deringing has 3 NL refinement loops at levels 0-1
-  * Destaircase has 2 BM3D passes at levels 0-2, 1 pass at levels 3-4
-  * Deblocking has 2 passes at levels 0-2, 1 pass at levels 3-4 (NEW: difference-based processing)
-- Level 3+ uses simplified processing with early returns
+If you keep a global profile, a simple mapping is: **`FORMAT == "INTERLACED" → source_format="video"`**, otherwise `"film"`.
 
-# FEATURES vs Original Oyster
+### `source_quality`
+Overall correction strength (not speed):
 
-- Uses cuFFT backend for DFTTest2 (faster than nvrtc/cuda fallback chain)
-- Shared DFTTest backend reused across calls (eliminates recreation overhead)
-- Direct function calls (no class wrapper indirection)
-- Optimized bitdepth conversions (only when needed)
-- Level 0-1 include triple BM3D pass for ultimate quality
-- Level 0 uses larger NLMeans windows (64 vs 32) and stronger sigma scaling
-- Adaptive NLMeans parameters at level 0 (a=6, s=3 vs 8,4) to preserve fine detail
-- Content-aware presets with automatic detection based on framerate
-- Deblocking uses difference-based processing like original Oyster (better artifact removal)
+| Value    | Effect                |
+|---------:|-----------------------|
+| `low`    | Minimal correction    |
+| `medium` | Balanced cleanup      |
+| `good`   | More aggressive       |
 
-# PERFORMANCE OPTIMIZATIONS
+### Resolution class (automatic)
+```
+if src.height >= 720 → HD scaling profile
+else                 → SD scaling profile
+```
 
-- sosize=0 for faster cuFFT operation
-- _ensure_float32() helper reduces redundant conversions
-- Faster Expr with akarin requirement
-- Reduced redundant CopyFrameProps calls
-- Fixed VAggregate syntax (bm3d.VAggregate vs direct call)
+### Strength scaling tables
 
-# PRESET FREQUENCY CUTOFFS
+**Format × Resolution → BM3D σ & NLMeans h multipliers**
 
-- auto (default): fps > 30 uses "video" preset, fps ≤ 30 uses "film" preset
-- film: 0.65 (Deringing/Destaircase), 0.18 (Deblocking) - preserves film grain
-- balanced: 0.48 (Deringing/Destaircase), 0.12 (Deblocking) - middle ground
-- video: 0.35 (Deringing/Destaircase), 0.08 (Deblocking) - aggressive filtering
+| Resolution | Format     | BM3D σ | NLMeans h |
+|-----------|------------|-------:|----------:|
+| **SD**    | film       | 1.20   | 1.05      |
+| **SD**    | video      | 1.35   | 1.15      |
+| **SD**    | balanced   | 1.27   | 1.10      |
+| **HD**    | film       | 0.95   | 1.00      |
+| **HD**    | video      | 1.10   | 1.05      |
+| **HD**    | balanced   | 1.03   | 1.02      |
 
-BM3D Params Format: [block_step, bm_range, ps_num, ps_range]
+**Quality multipliers** (applied on top):
+
+| Quality | BM3D σ | NLMeans h | Destaircase `thr`/`elast` |
+|--------:|-------:|----------:|---------------------------:|
+| low     | 0.85   | 0.90      | 0.85                       |
+| medium  | 1.00   | 1.00      | 1.00                       |
+| good    | 1.17   | 1.12      | 1.10                       |
+
+
+## Public API
+
+```python
+Basic(
+    src, super=None, *,
+    radius=None, sad=None, pel=2, short_time=False, level=0,
+    source_format="balanced", source_quality="medium"
+)
+```
+Motion‑compensated temporal denoising. If `radius` or `sad` is explicitly provided, the given value is used; otherwise they are chosen from `source_format` + `source_quality`.
+
+---
+
+```python
+Deringing(
+    src, ref=None, *,
+    radius=3, h=6.4, sigma=10.0, lowpass=None, level=0,
+    source_format="balanced", source_quality="medium"
+)
+```
+Ringing removal with BM3D and NLMeans refinement. `h` and `sigma` are scaled by tables above **unless** explicitly provided.
+
+---
+
+```python
+Destaircase(
+    src, ref=None, *,
+    radius=3, sigma=12.0, thr=0.03, elast=0.015, lowpass=None, level=0,
+    source_format="balanced", source_quality="medium"
+)
+```
+Reduces block‑edge staircasing. `sigma`, `thr`, and `elast` are scaled **unless** explicitly provided.
+
+---
+
+```python
+Deblocking(
+    src, ref=None, *,
+    radius=3, h=6.4, sigma=16.0, lowpass=None, level=0,
+    source_format="balanced", source_quality="medium"
+)
+```
+Removes DCT blocking using difference‑based filtering and frequency reintegration. The block mask behavior is fixed; only strengths scale.
+
+
+## Parameter override rule
+
+> **Any parameter explicitly provided by the caller is respected as‑is and is not scaled.**
+
+Examples:
+```python
+# Fully automatic scaling from tables:
+clip = PMOyster.Deringing(clip)
+
+# h is not scaled (explicit override):
+clip = PMOyster.Deringing(clip, h=3.0)
+
+# sigma is not scaled (explicit override):
+clip = PMOyster.Destaircase(clip, sigma=8.5)
+```
+
+
+## Example
+
+```python
+level = 2  # recommended starting point
+
+super = PMOyster.Super(clip, pel=2)
+ref   = PMOyster.Basic(clip, super=super, source_format="video", source_quality="good")
+
+clip = PMOyster.Deringing(clip, ref, level=level)
+#clip = PMOyster.Destaircase(clip, ref, level=level)
+#clip = PMOyster.Deblocking(clip, ref, level=level)
+```
+
+
+## License
+
+LGPL‑3.0

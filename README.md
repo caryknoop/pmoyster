@@ -46,6 +46,7 @@ LGPL v3.0
 | **Level 3** | 2        | 3            | [4,8,1,4]   | Deringing: 1 pass<br>Destaircase: 2 passes<br>Deblocking: 1 pass |
 | **Level 4** | 1        | 2            | [8,4,1,2]   | Deringing: 1 pass<br>Destaircase: 1 pass<br>Deblocking: 1 pass |
 
+Level 0 is only suitable on high frequency
 # Notes
 
 - NL Iters: Only applies to Deringing function

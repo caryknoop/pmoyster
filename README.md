@@ -54,8 +54,8 @@ Describes the origin of the material:
 
 | Value      | Intended Use Case                    | Behavior                     |
 |-----------:|--------------------------------------|------------------------------|
-| `film`     | Film scans, CGI, cinematic masters   | Grain‑preserving             |
-| `video`    | Broadcast / tape / web compression   | Stronger artifact suppression|
+| `film`     | Film based formats                   | Grain‑preserving             |
+| `video`    | Video based formats                  | Stronger artifact suppression|
 | `balanced` | Neutral default                      | Middle ground                |
 | `auto`     | Auto: `fps > 25 → video`, else film  | Safe for NTSC; PAL is mixed  |
 

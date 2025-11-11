@@ -18,6 +18,22 @@ https://github.com/IFeelBloated/Oyster
 | `mvsf`           | Accelerated motion estimation / compensation (MVTools) |
 
 
+
+## Example
+
+```python
+level = 2       # recommended starting point
+sf = "video"    # "video, "film", "balanced", "auto"
+sq = "medium"   # "low", "medium", "good"   
+
+super = PMOyster.Super(clip, pel=2)
+ref   = PMOyster.Basic(clip, super=super, source_format=sf, source_quality=sq)
+
+clip = PMOyster.Deringing(clip, ref, level=level)
+#clip = PMOyster.Destaircase(clip, ref, level=level)
+#clip = PMOyster.Deblocking(clip, ref, level=level)
+```
+
 ## Quality Level (`level`)
 
 | Level | Speed    | Deringing       | Destaircase | Deblocking | Notes                       |
@@ -141,21 +157,6 @@ clip = PMOyster.Deringing(clip, h=3.0)
 # sigma is not scaled (explicit override):
 clip = PMOyster.Destaircase(clip, sigma=8.5)
 ```
-
-
-## Example
-
-```python
-level = 2  # recommended starting point
-
-super = PMOyster.Super(clip, pel=2)
-ref   = PMOyster.Basic(clip, super=super, source_format="video", source_quality="good")
-
-clip = PMOyster.Deringing(clip, ref, level=level)
-#clip = PMOyster.Destaircase(clip, ref, level=level)
-#clip = PMOyster.Deblocking(clip, ref, level=level)
-```
-
 
 ## License
 

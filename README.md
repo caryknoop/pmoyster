@@ -18,7 +18,7 @@ https://github.com/IFeelBloated/Oyster
 | `mvsf`           | Accelerated motion estimation / compensation (MVTools) |
 
 
-## Quality Level (`level`) — unchanged
+## Quality Level (`level`)
 
 | Level | Speed    | Deringing       | Destaircase | Deblocking | Notes                       |
 |------:|----------|-----------------|-------------|------------|-----------------------------|
@@ -28,10 +28,10 @@ https://github.com/IFeelBloated/Oyster
 | **3** | Fast     | Light            | 1 pass      | 1 pass     | Good for previewing         |
 | **4** | Fastest  | Minimal          | Minimal     | Minimal    | Fast cleanup / diagnostics  |
 
-`level` controls internal processing complexity and is **independent** of the new input‑adaptation parameters below.
+`level` controls internal processing complexity and is **independent** of the input‑adaptation parameters below.
 
 
-## Source‑Dependent Strength Controls (new)
+## Source‑Dependent Strength Controls
 
 ### `source_format`
 Describes the origin of the material:
@@ -43,7 +43,6 @@ Describes the origin of the material:
 | `balanced` | Neutral default                      | Middle ground                |
 | `auto`     | Auto: `fps > 25 → video`, else film  | Safe for NTSC; PAL is mixed  |
 
-If you keep a global profile, a simple mapping is: **`FORMAT == "INTERLACED" → source_format="video"`**, otherwise `"film"`.
 
 ### `source_quality`
 Overall correction strength (not speed):

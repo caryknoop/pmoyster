@@ -62,12 +62,11 @@ LGPL v3.0
 - Shared DFTTest backend reused across calls (eliminates recreation overhead)
 - Direct function calls (no class wrapper indirection)
 - Optimized bitdepth conversions (only when needed)
-- Explicit GRAY input/output with ChromaSave/ChromaRestore helpers
 - Level 0-1 include triple BM3D pass for ultimate quality
 - Level 0 uses larger NLMeans windows (64 vs 32) and stronger sigma scaling
-- NEW: Adaptive NLMeans parameters at level 0 (a=6, s=3 vs 8,4) to preserve fine detail
+- Adaptive NLMeans parameters at level 0 (a=6, s=3 vs 8,4) to preserve fine detail
 - Content-aware presets with automatic detection based on framerate
-- NEW: Deblocking uses difference-based processing like original Oyster (better artifact removal)
+- Deblocking uses difference-based processing like original Oyster (better artifact removal)
 
 # PERFORMANCE OPTIMIZATIONS
 

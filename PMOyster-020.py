@@ -40,20 +40,12 @@ FEATURES vs Original Oyster:
 - Shared DFTTest backend reused across calls (eliminates recreation overhead)
 - Direct function calls (no class wrapper indirection)
 - Optimized bitdepth conversions (only when needed)
-- Explicit GRAY input/output with ChromaSave/ChromaRestore helpers
 - Level 0-1 include triple BM3D pass for ultimate quality
 - Level 0 uses larger NLMeans windows (64 vs 32) and stronger sigma scaling
-- NEW: Adaptive NLMeans parameters at level 0 (a=6, s=3 vs 8,4) to preserve fine detail
+- Adaptive NLMeans parameters at level 0 (a=6, s=3 vs 8,4) to preserve fine detail
 - Content-aware presets with automatic detection based on framerate
-- NEW: Deblocking uses difference-based processing like original Oyster (better artifact removal)
-- FULL BM3Dv2 MIGRATION (2025-11-11): All temporal BM3D calls now use BM3Dv2 with integrated aggregation
-  → VAggregate completely removed everywhere
-  → v2 parameter removed (everything is V2 now)
-  → Cleaner, faster, no stacked frames
-  → CHROMA IS NOW PROCESSED IN-PLACE: no more ChromaSave/ChromaRestore required
-    • BM3Dv2 works natively on YUV420P8 / YUV420PS / YUV444PS / GRAY
-    • All functions automatically denoise every existing plane (luma + chroma when present)
-    • Zero user workflow changes needed
+- Deblocking uses difference-based processing like original Oyster (better artifact removal)
+- All temporal BM3D calls now use BM3Dv2 with integrated aggregation
 
 PERFORMANCE OPTIMIZATIONS:
 - sosize=0 for faster cuFFT operation
@@ -126,7 +118,7 @@ mdegrain_args = dict(thscd1=16711680.0, thscd2=255.0)
 nnedi_args = dict(field=1, dh=True, nns=4, qual=2, etype=1, nsize=0)
 
 # ============================================================================
-# INTERNAL HELPER FUNCTIONS (All expect GRAY input)
+# INTERNAL HELPER FUNCTIONS 
 # ============================================================================
 
 def _ensure_float32(clip):
@@ -235,7 +227,7 @@ def _basic(src, super_clip, radius, pel, sad, short_time, level):
     return CropRel(degrained, 128, 128, 128, 128)
 
 # ============================================================================
-# DERINGING - FULL BM3Dv2, works on all planes
+# DERINGING
 # ============================================================================
 def _deringing(src, ref, radius, h, sigma, lowpass, level):
     c1, c2 = 0.113414, 2.8623
@@ -285,7 +277,7 @@ def _deringing(src, ref, radius, h, sigma, lowpass, level):
     return nl_loop(bm3d_final, refined, nl_iters - 1)
 
 # ============================================================================
-# DESTAIRCASE - FULL BM3Dv2, works on all planes
+# DESTAIRCASE
 # ============================================================================
 def _destaircase(src, ref, radius, sigma, thr, elast, lowpass, level):
     mask = _gen_block_mask(src)
@@ -314,7 +306,7 @@ def _destaircase(src, ref, radius, sigma, thr, elast, lowpass, level):
         return MaskedMerge(src, bm3d_final, mask)
 
 # ============================================================================
-# DEBLOCKING - FULL BM3Dv2, works on all planes
+# DEBLOCKING
 # ============================================================================
 def _deblocking(src, ref, radius, h, sigma, lowpass, level):
     mask = _gen_block_mask(src)
@@ -347,7 +339,7 @@ def _deblocking(src, ref, radius, h, sigma, lowpass, level):
     return MaskedMerge(src_final, ref_final, mask)
 
 # ============================================================================
-# PUBLIC API - NO MORE ChromaSave/ChromaRestore
+# PUBLIC API
 # ============================================================================
 
 def Super(src, pel=2):

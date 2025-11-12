@@ -1,15 +1,6 @@
 """
 Poor Man's Oyster with Redesigned Scaling System
 
-
-CRITICAL FIXES IN v0.25:
-- Fixed ThrMerge parameter order (flt/src were swapped)
-- Fixed NL loop window calculation (now matches Blueprint's exponential decay)
-- Store intermediate refs in Destaircase (no more inline MergeDiff in BM3D calls)
-- Destaircase defaults now match Blueprint (radius=6, sigma=16.0, thr=0.03125)
-- Reduced Deringing sigma scaling (was too aggressive at 2.0x, now 1.5x max)
-- NL loop now correctly uses min window of 2 (not 4)
-
 LEVEL COMPARISON TABLE:
 =========================================================================
 PMOyster v2  | NL Iters | Recalc Steps | BM3D Params  | BM3D Passes (by function)
@@ -42,7 +33,7 @@ FEATURES vs Original Oyster:
 - Optimized bitdepth conversions (only when needed)
 - Level 0-1 include triple BM3D pass for ultimate quality
 - Content-aware presets with automatic detection based on framerate
-- Difference-based processing matching original  architecture
+- Difference-based processing matching 
 - All temporal BM3D calls use BM3Dv2 with integrated aggregation
 - Elastic threshold blending (ThrMerge) restored and corrected
 
@@ -57,7 +48,6 @@ PRESET FREQUENCY CUTOFFS:
 - balanced: 0.48 (Deringing/Destaircase), 0.12 (Deblocking) - middle ground
 - video: 0.35 (Deringing/Destaircase), 0.08 (Deblocking) - aggressive filtering
 
-BM3D Params Format: [block_step, bm_range, ps_num, ps_range]
 """
 
 import vapoursynth as vs
@@ -104,6 +94,41 @@ AddBorders = core.std.AddBorders
 MaskedMerge = core.std.MaskedMerge
 ShufflePlanes = core.std.ShufflePlanes
 
+def _process_yuv(src, ref, y_func, uv_func=None):
+    """
+    Smart plane processing wrapper
+    - If GRAY: apply y_func to entire clip
+    - If YUV: split, apply y_func to Y, apply uv_func to U/V (or skip if None), recombine
+    
+    Args:
+        src: Source clip
+        ref: Reference clip (or None)
+        y_func: Function to apply to luma (takes clip, ref_plane arguments)
+        uv_func: Function to apply to chroma (takes clip argument), or None to pass through
+    """
+    if src.format.color_family == vs.GRAY:
+        return y_func(src, ref)
+    
+    # Split planes
+    y = ShufflePlanes(src, 0, vs.GRAY)
+    u = ShufflePlanes(src, 1, vs.GRAY)
+    v = ShufflePlanes(src, 2, vs.GRAY)
+    
+    # Split ref if provided
+    ref_y = ShufflePlanes(ref, 0, vs.GRAY) if ref is not None else None
+    
+    # Process luma
+    y = y_func(y, ref_y)
+    
+    # Process chroma (if function provided)
+    if uv_func is not None:
+        u = uv_func(u)
+        v = uv_func(v)
+    
+    # Recombine
+    return ShufflePlanes([y, u, v], [0, 0, 0], vs.YUV)
+
+
 fmtc_args = dict(fulls=True, fulld=True)
 bitdepth_args = dict(bits=32, flt=1, fulls=True, fulld=True, dmode=1)
 msuper_args = dict(hpad=0, vpad=0, sharp=2, levels=0)
@@ -113,18 +138,6 @@ mdegrain_args = dict(thscd1=16711680.0, thscd2=255.0)
 nnedi_args = dict(field=1, dh=True, nns=4, qual=2, etype=1, nsize=0)
 
 # === SCALING & QUALITY ===
-# IMPORTANT: format and correction are INDEPENDENT concepts
-#
-# format: Type of source material (affects grain preservation)
-#   'film' = Film source with grain → GENTLER filtering to preserve grain
-#   'video' = Video source (camcorder, digital) → Can use STRONGER filtering
-#   'balanced' = Mixed or unknown source
-#
-# correction: How aggressively to process (independent of film/video)
-#   'low' = Gentle processing (preserve maximum detail)
-#   'medium' = Moderate processing (balanced approach)
-#   'good' = Aggressive processing (maximum artifact removal)
-#
 
 SCALING = {
     "sd": {
@@ -139,8 +152,6 @@ SCALING = {
     }
 }
 
-# Quality levels: How hard to process (INDEPENDENT of film/video type)
-# These multiply the format-adjusted base values
 CORRECTION = {
     "low":    { "sigma": 0.50, "h": 0.60, "thr": 0.70, "sad_mul": 0.75, "elast_mul": 0.6 },   # Gentle approach
     "medium": { "sigma": 1.00, "h": 1.00, "thr": 1.00, "sad_mul": 1.00, "elast_mul": 1.0 },   # Moderate approach
@@ -326,7 +337,7 @@ def _thr_merge(flt, src, ref=None, thr=0.03125, elast=None, fast=False):
         # Simple binary threshold (fast path)
         return Expr([flt, src, ref], f"x z - abs {thr} > x y ?")
     
-    # Full elastic blending (Blueprint algorithm)
+    # Full elastic blending
     # BExp formula: x * ((thr+elast - z) / (2*elast)) + y * ((elast + z - thr) / (2*elast))
     tep = thr + elast
     te2 = 2.0 * elast
@@ -355,7 +366,7 @@ def _thr_merge(flt, src, ref=None, thr=0.03125, elast=None, fast=False):
 # ============================================================================
 def _destaircase(src, ref, radius, sigma, thr, elast, lowpass, level):
     """
-    Remove staircase artifacts using Blueprint architecture:
+    Remove staircase artifacts:
     FreqMerge → ThrMerge → Diff-domain double BM3D → MaskedMerge
     """
     mask = _gen_block_mask(src)
@@ -425,10 +436,6 @@ def _deringing(src, ref, radius, h, sigma, lowpass, level):
     block_step, bm_range, ps_num, ps_range = params[level]
     sbsize = block_step * 2 + 1
     
-    # Level-based sigma scaling: REDUCED from previous version
-    # Previous: [1.5, 1.3, 1.1, 1.0, 0.95] was compounding the API scaling
-    # New: Minimal scaling, let API quality settings do the work
-    # Level 0-1 get slight boost for ultimate quality, others are neutral/reduced
     sigma_scaled = sigma * [1.15, 1.05, 1.00, 0.90, 0.85][level]
     
     # Prefilter reference with frequency merge
@@ -536,10 +543,6 @@ def _deblocking(src, ref, radius, h, sigma, lowpass, level):
     # Apply only to block boundaries
     return MaskedMerge(src_final, ref_final, mask)
 
-# ============================================================================
-# PUBLIC API
-# ============================================================================
-
 def _resolve_scale(src, format, correction):
     """Resolve format and quality scaling factors"""
     res = "hd" if src.height >= 720 else "sd"
@@ -561,6 +564,10 @@ def _resolve_temporal(src, format, correction):
     sad = base["sad"] * q["sad_mul"]
     radius = base["radius"]
     return sad, radius
+
+# ============================================================================
+# PUBLIC API
+# ============================================================================
 
 def Super(src, pel=2):
     """
@@ -601,7 +608,7 @@ def Basic(src, super=None, *, radius=None, pel=2, sad=None, short_time=False, le
     return _basic(src, super_clip, radius, pel, sad, short_time, level)
 
 def Deringing(src, ref=None, *, radius=3, h=6.4, sigma=10.0, lowpass=None, level=2,
-              format="balanced", correction="medium"):
+              format="balanced", correction="medium", chroma=True):
     """
     Remove ringing artifacts
     
@@ -622,6 +629,7 @@ def Deringing(src, ref=None, *, radius=3, h=6.4, sigma=10.0, lowpass=None, level
             "low" - Gentle processing (preserve maximum detail)
             "medium" - Moderate processing (balanced approach)
             "good" - Aggressive processing (maximum artifact removal)
+        chroma: Process chroma planes (default: True, single-pass at level 3)
     
     Returns:
         Deringed clip
@@ -637,8 +645,8 @@ def Deringing(src, ref=None, *, radius=3, h=6.4, sigma=10.0, lowpass=None, level
         ref = src
     
     fmt, q = _resolve_scale(src, format, correction)
-    sigma *= fmt["sigma"] * q["sigma"]
-    h *= fmt["h"] * q["h"]
+    sigma_scaled = sigma * fmt["sigma"] * q["sigma"]
+    h_scaled = h * fmt["h"] * q["h"]
     
     if lowpass is None:
         if format == "film" or (format == "auto" and sigma <= 10):
@@ -647,12 +655,22 @@ def Deringing(src, ref=None, *, radius=3, h=6.4, sigma=10.0, lowpass=None, level
             cutoff = 0.35
         else:
             cutoff = 0.48
-        lowpass = [0.0, sigma, cutoff, 1024.0, 1.0, 1024.0]
+        lowpass = [0.0, sigma_scaled, cutoff, 1024.0, 1.0, 1024.0]
     
-    return _deringing(src, ref, radius, h, sigma, lowpass, level)
+    # Define luma processing
+    def process_y(y_clip, y_ref):
+        return _deringing(y_clip, y_ref if y_ref is not None else y_clip, 
+                         radius, h_scaled, sigma_scaled, lowpass, level)
+    
+    # Define chroma processing (light, single-pass, more aggressive)
+    def process_uv(uv_clip):
+        return _deringing(uv_clip, uv_clip, radius=0, h=h_scaled*1.2, 
+                         sigma=sigma_scaled*1.5, lowpass=lowpass, level=3)
+    
+    return _process_yuv(src, ref, process_y, process_uv if chroma else None)
 
 def Destaircase(src, ref=None, *, radius=6, sigma=16.0, thr=0.03125, elast=0.015625, 
-                lowpass=None, level=2, format="balanced", correction="medium"):
+                lowpass=None, level=2, format="balanced", correction="medium", chroma=True):
     """
     Remove staircase artifacts (DEFAULTS NOW MATCH BLUEPRINT)
     
@@ -667,6 +685,7 @@ def Destaircase(src, ref=None, *, radius=6, sigma=16.0, thr=0.03125, elast=0.015
         level: Processing level (0-4)
         format: "film", "video", "balanced", or "auto"
         correction: "low", "medium", or "good"
+        chroma: Process chroma planes (default: True, single-pass at level 3)
     
     Returns:
         Destaircased clip
@@ -675,9 +694,9 @@ def Destaircase(src, ref=None, *, radius=6, sigma=16.0, thr=0.03125, elast=0.015
         ref = src
     
     fmt, q = _resolve_scale(src, format, correction)
-    sigma *= fmt["sigma"] * q["sigma"]
-    thr *= q["thr"]
-    elast *= q["thr"] * q["elast_mul"]
+    sigma_scaled = sigma * fmt["sigma"] * q["sigma"]
+    thr_scaled = thr * q["thr"]
+    elast_scaled = elast * q["thr"] * q["elast_mul"]
     
     if lowpass is None:
         if format == "film":
@@ -686,12 +705,22 @@ def Destaircase(src, ref=None, *, radius=6, sigma=16.0, thr=0.03125, elast=0.015
             cutoff = 0.35
         else:
             cutoff = 0.48
-        lowpass = [0.0, sigma, cutoff, 1024.0, 1.0, 1024.0]
+        lowpass = [0.0, sigma_scaled, cutoff, 1024.0, 1.0, 1024.0]
     
-    return _destaircase(src, ref, radius, sigma, thr, elast, lowpass, level)
+    # Define luma processing
+    def process_y(y_clip, y_ref):
+        return _destaircase(y_clip, y_ref if y_ref is not None else y_clip,
+                           radius, sigma_scaled, thr_scaled, elast_scaled, lowpass, level)
+    
+    # Define chroma processing (light, single-pass, more aggressive)
+    def process_uv(uv_clip):
+        return _destaircase(uv_clip, uv_clip, radius=0, sigma=sigma_scaled*1.5,
+                           thr=thr_scaled, elast=elast_scaled, lowpass=lowpass, level=3)
+    
+    return _process_yuv(src, ref, process_y, process_uv if chroma else None)
 
 def Deblocking(src, ref=None, *, radius=3, h=6.4, sigma=16.0, lowpass=None, level=2,
-               format="balanced", correction="medium"):
+               format="balanced", correction="medium", chroma=True):
     """
     Remove blocking artifacts
     
@@ -705,6 +734,7 @@ def Deblocking(src, ref=None, *, radius=3, h=6.4, sigma=16.0, lowpass=None, leve
         level: Processing level (0-4)
         format: "film", "video", "balanced", or "auto"
         correction: "low", "medium", or "good"
+        chroma: Process chroma planes (default: True, single-pass at level 3)
     
     Returns:
         Deblocked clip
@@ -713,8 +743,8 @@ def Deblocking(src, ref=None, *, radius=3, h=6.4, sigma=16.0, lowpass=None, leve
         ref = src
     
     fmt, q = _resolve_scale(src, format, correction)
-    sigma *= fmt["sigma"] * q["sigma"]
-    h *= fmt["h"] * q["h"]
+    sigma_scaled = sigma * fmt["sigma"] * q["sigma"]
+    h_scaled = h * fmt["h"] * q["h"]
     
     if lowpass is None:
         if format == "film":
@@ -725,4 +755,14 @@ def Deblocking(src, ref=None, *, radius=3, h=6.4, sigma=16.0, lowpass=None, leve
             cutoff = 0.12
         lowpass = [0.0, 0.0, cutoff, 1024.0, 1.0, 1024.0]
     
-    return _deblocking(src, ref, radius, h, sigma, lowpass, level)
+    # Define luma processing
+    def process_y(y_clip, y_ref):
+        return _deblocking(y_clip, y_ref if y_ref is not None else y_clip,
+                          radius, h_scaled, sigma_scaled, lowpass, level)
+    
+    # Define chroma processing (light, single-pass, more aggressive)
+    def process_uv(uv_clip):
+        return _deblocking(uv_clip, uv_clip, radius=0, h=h_scaled*1.2,
+                          sigma=sigma_scaled*1.5, lowpass=lowpass, level=3)
+    
+    return _process_yuv(src, ref, process_y, process_uv if chroma else None)

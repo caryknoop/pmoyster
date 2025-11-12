@@ -5,6 +5,7 @@ PMOyster is a GPU-accelerated implementation of the Oyster restoration pipeline 
 Modeled after the original Oyster:
 https://github.com/IFeelBloated/Oyster
 
+**Script is  under development - interface may change - nothing is stable at this moment**
 
 ## Requirements
 

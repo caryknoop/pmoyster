@@ -109,7 +109,7 @@ Motion-compensated temporal denoising. If `radius` or `sad` is explicitly provid
 Deringing(
     src, ref=None, *,
     radius=3, h=6.4, sigma=10.0, lowpass=None, level=2,
-    format="balanced", correction="medium"
+    format="balanced", correction="medium", chroma=True)
 )
 ```
 Ringing removal with BM3D and NLMeans refinement. `h` and `sigma` are scaled by tables above **unless** explicitly provided.
@@ -122,7 +122,7 @@ Ringing removal with BM3D and NLMeans refinement. `h` and `sigma` are scaled by 
 Destaircase(
     src, ref=None, *,
     radius=6, sigma=16.0, thr=0.03125, elast=0.015625, lowpass=None, level=2,
-    format="balanced", correction="medium"
+    format="balanced", correction="medium", chroma=True
 )
 ```
 Reduces block-edge staircasing. `sigma`, `thr`, and `elast` are scaled **unless** explicitly provided.
@@ -135,7 +135,7 @@ Reduces block-edge staircasing. `sigma`, `thr`, and `elast` are scaled **unless*
 Deblocking(
     src, ref=None, *,
     radius=3, h=6.4, sigma=16.0, lowpass=None, level=2,
-    format="balanced", correction="medium"
+    format="balanced", correction="medium", chroma=True
 )
 ```
 Removes DCT blocking using difference-based filtering and frequency reintegration. The block mask behavior is fixed; only strengths scale.
@@ -173,7 +173,7 @@ ref   = PMOyster.Basic(clip, super=super,
 clip = PMOyster.Deringing(clip, ref, 
                           format="film",
                           correction="medium",
-                          level=level)
+                          level=level, croma=False)
 # Result: sigma=7.5, gentler to preserve grain
 ```
 

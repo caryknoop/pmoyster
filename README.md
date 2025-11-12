@@ -45,7 +45,7 @@ Describes the **type** of source material (affects grain preservation):
 
 **Key concept**: Film sources have **grain** (from film stock) that should be **preserved** as part of the aesthetic. Video sources (camcorder, digital video) have no grain structure, so more aggressive filtering is acceptable. Both can have MPEG-2 compression artifacts (ringing, blocking, mosquito noise).
 
-**IMPORTANT**: `source_format` and `source_quality` are **INDEPENDENT** settings. You can have:
+**IMPORTANT**: `format` and `correction` are **INDEPENDENT** settings. You can have:
 - Film source with gentle processing: `format='film', quality='low'`
 - Film source with aggressive processing: `format='film', quality='good'`
 - Video source with any quality level
@@ -98,7 +98,7 @@ else                 -> SD scaling profile
 Basic(
     src, super=None, *,
     radius=None, sad=None, pel=2, short_time=False, level=0,
-    format="balanced", quality="medium"
+    format="balanced", correction="medium"
 )
 ```
 Motion-compensated temporal denoising. If `radius` or `sad` is explicitly provided, the given value is used; otherwise they are chosen from `format` + `quality`.

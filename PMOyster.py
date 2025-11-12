@@ -42,7 +42,7 @@ FEATURES vs Original Oyster:
 - Optimized bitdepth conversions (only when needed)
 - Level 0-1 include triple BM3D pass for ultimate quality
 - Content-aware presets with automatic detection based on framerate
-- Difference-based processing matching Blueprint architecture
+- Difference-based processing matching original  architecture
 - All temporal BM3D calls use BM3Dv2 with integrated aggregation
 - Elastic threshold blending (ThrMerge) restored and corrected
 

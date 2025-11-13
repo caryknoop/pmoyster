@@ -116,7 +116,7 @@ def _ensure_float32(clip):
     return clip
 
 def _freq_merge(low, hi, sbsize, slocation):
-    sosize = 0
+    sosize = sbsize // 2
     hi_filtered = DFTTest2(hi, sbsize=sbsize, sosize=sosize, slocation=slocation, smode=1, tbsize=1, backend=_DFTTEST_BACKEND)
     hif = MakeDiff(hi, hi_filtered)
     hif = _ensure_float32(hif)

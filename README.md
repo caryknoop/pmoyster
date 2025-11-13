@@ -335,13 +335,13 @@ The `correction` parameter controls overall processing strength:
 
 The `level` parameter controls processing intensity (0-4):
 
-| Level | Strength | NLMeans Iterations | BM3D Passes | Best For |
-|-------|----------|-------------------|-------------|----------|
-| 0 | Maximum | 2+ | 3 | Heavily damaged sources |
-| 1 | High | 2+ | 2 | Noisy DVD sources |
-| 2 | Moderate | 1-2 | 1 | Standard DVD quality (default) |
-| 3 | Light | 1 | 1 | Clean sources |
-| 4 | Minimal | 1 | 1 | Near-pristine sources |
+| Level | Speed      | Deringing       | Destaircase | Deblocking | Notes                       |
+|------:|------------|-----------------|-------------|------------|-----------------------------|
+| **0** | Glacial    | Strong refine    | 2-3 passes  | 2 passes   | Max quality, slow           |
+| **1** | Slower     | Strong           | 2 passes    | 2 passes   | Stable high quality         |
+| **2** | Still slow | Medium           | 2 passes    | 2 passes   | **Recommended default**     |
+| **3** | Slowish    | Light            | 1 pass      | 1 pass     | Good for previewing         |
+| **4** | Less slow  | Minimal          | Minimal     | Minimal    | Fast cleanup / diagnostics  |
 
 ---
 
